@@ -1,4 +1,6 @@
 <script>
+    import Header from '$lib/components/Header.svelte';
+    import Footer from '$lib/components/Footer.svelte';
     import { theme } from '$lib/stores/themeStore.js';
     import { browser } from '$app/environment';
     import '../app.css';

@@ -35,7 +35,6 @@ app = FastAPI(
 )
 
 # --- Color Conversion and Calculation Helpers ---
-
 def hex_to_rgb(hex_str: str) -> Tuple[int, int, int]:
     """Converts a HEX color string to an (R, G, B) tuple."""
     hex_str = hex_str.lstrip('#')
@@ -71,13 +70,12 @@ def mix_lab_colors(colors_with_ratios: List[Tuple[np.ndarray, int]]) -> np.ndarr
     return mixed_lab
 
 # --- API Endpoint ---
-
 @app.post("/generate-recipe", response_model=List[RecipeOutput])
 async def generate_recipe_endpoint(request: RecipeRequest):
     """
     This endpoint receives a target color and a list of available paints,
-    then calculates and returns the single best mixing recipe for both 
-    2-ingredient and 3-ingredient combinations.
+    then calculates and returns the single best mixing recipe for 
+    2, 3, and 4-ingredient combinations.
     """
     try:
         target_rgb = hex_to_rgb(request.target_hex)
@@ -89,30 +87,25 @@ async def generate_recipe_endpoint(request: RecipeRequest):
         p.product_id: (p.name, np.array([p.cielab_l, p.cielab_a, p.cielab_b]))
         for p in request.available_paints
     }
-
-    # This dictionary will store the single best recipe for each ingredient count
+    
     best_recipe_by_count = {}
     paint_ids = list(available_paints_lab.keys())
-
-    # --- Test combinations for 2 AND 3 paints ---
-    # Loop from 2 ingredients up to 3
-    for num_ingredients in range(2, 4):
-        # Skip if the user hasn't selected enough paints
+    
+    # --- UPDATED: Test combinations for 2, 3, AND 4 paints ---
+    # Loop from 2 ingredients up to 4
+    for num_ingredients in range(2, 5):
         if len(paint_ids) < num_ingredients:
             continue
-
-        # Generate paint combinations (e.g., all 3-paint combos)
+        
         for combo_ids in combinations(paint_ids, num_ingredients):
             combo_paints = [available_paints_lab[pid] for pid in combo_ids]
             
-            # Generate ratio combinations (e.g., 1:1:2, 1:2:1, etc.)
             # Using a smaller range for ratios improves performance
             for ratio_combo in product(range(1, 3), repeat=num_ingredients):
                 colors_with_ratios = [(paint[1], ratio) for paint, ratio in zip(combo_paints, ratio_combo)]
                 mixed_lab = mix_lab_colors(colors_with_ratios)
                 delta_e = get_color_difference(target_lab, mixed_lab)
                 
-                # If we haven't found a recipe for this count yet, or if this one is better, save it
                 if num_ingredients not in best_recipe_by_count or delta_e < best_recipe_by_count[num_ingredients]["delta_e"]:
                     recipe_parts = {paint[0]: ratio for paint, ratio in zip(combo_paints, ratio_combo)}
                     best_recipe_by_count[num_ingredients] = {
@@ -136,8 +129,4 @@ async def generate_recipe_endpoint(request: RecipeRequest):
                 mixed_hex=mixed_hex
             )
         )
-
     return output_recipes
-
-
-# To run this app, save it as main.py and run `uvicorn main:app --reload` in your terminal.
