@@ -1,5 +1,7 @@
 <script>
     import { theme } from '$lib/stores/themeStore.js';
+    import { user } from '$lib/stores/authStore.js'; // Import the new user store
+    import { supabase } from '$lib/services/supabaseClient.js'; // Import supabase client for logout
 </script>
 
 <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-50">
@@ -25,8 +27,18 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.485-8.485l-.707.707M4.222 4.222l-.707.707M21 12h-1M4 12H3m16.778 4.222l-.707-.707M6.343 17.657l-.707-.707M12 5.5A6.5 6.5 0 1012 18.5 6.5 6.5 0 0012 5.5z"></path></svg>
                     {/if}
                 </button>
-            </div>
 
+                {#if $user}
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">{$user.email}</span>
+                        <button on:click={() => supabase.auth.signOut()} class="font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors">Logout</button>
+                    </div>
+                {:else}
+                    <a href="/login" class="font-medium text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white transition-colors">
+                        Login
+                    </a>
+                {/if}
+            </div>
         </div>
     </div>
 </header>

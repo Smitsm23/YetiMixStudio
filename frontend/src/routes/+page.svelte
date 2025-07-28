@@ -243,7 +243,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
             {#each recipeResult as result}
                 {@const numIngredients = Object.keys(result.recipe).length}
                         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md border dark:border-gray-700 p-5 flex flex-col">

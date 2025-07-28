@@ -91,8 +91,6 @@ async def generate_recipe_endpoint(request: RecipeRequest):
     best_recipe_by_count = {}
     paint_ids = list(available_paints_lab.keys())
     
-    # --- UPDATED: Test combinations for 2, 3, AND 4 paints ---
-    # Loop from 2 ingredients up to 4
     for num_ingredients in range(2, 5):
         if len(paint_ids) < num_ingredients:
             continue
@@ -100,7 +98,6 @@ async def generate_recipe_endpoint(request: RecipeRequest):
         for combo_ids in combinations(paint_ids, num_ingredients):
             combo_paints = [available_paints_lab[pid] for pid in combo_ids]
             
-            # Using a smaller range for ratios improves performance
             for ratio_combo in product(range(1, 3), repeat=num_ingredients):
                 colors_with_ratios = [(paint[1], ratio) for paint, ratio in zip(combo_paints, ratio_combo)]
                 mixed_lab = mix_lab_colors(colors_with_ratios)
@@ -114,7 +111,6 @@ async def generate_recipe_endpoint(request: RecipeRequest):
                         "mixed_lab": mixed_lab
                     }
 
-    # --- Format and return the best recipe from each category ---
     output_recipes = []
     for num_ingredients in sorted(best_recipe_by_count.keys()):
         recipe = best_recipe_by_count[num_ingredients]
@@ -129,4 +125,9 @@ async def generate_recipe_endpoint(request: RecipeRequest):
                 mixed_hex=mixed_hex
             )
         )
+
+    # --- THIS IS THE NEW LINE ---
+    # Sort the final list by accuracy in descending order.
+    output_recipes.sort(key=lambda x: x.accuracy, reverse=True)
+
     return output_recipes
