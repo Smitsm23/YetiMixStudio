@@ -9,7 +9,6 @@ from itertools import combinations, product
 
 # --- Pydantic Models for Data Validation ---
 class PaintInput(BaseModel):
-    """Represents a single paint color available to the user."""
     product_id: str
     name: str
     cielab_l: float
@@ -17,12 +16,10 @@ class PaintInput(BaseModel):
     cielab_b: float
 
 class RecipeRequest(BaseModel):
-    """Defines the structure of an incoming request to the API."""
     target_hex: str = Field(..., example="#87CEEB", description="The target color in HEX format.")
-    available_paints: List[PaintInput] = Field(..., description="A list of paints the user has.")
+    available_paints: List[PaintInput]
 
 class RecipeOutput(BaseModel):
-    """Defines the structure of a single recipe result."""
     recipe: Dict[str, int]
     accuracy: float
     mixed_hex: str
@@ -36,30 +33,26 @@ app = FastAPI(
 
 # --- Color Conversion and Calculation Helpers ---
 def hex_to_rgb(hex_str: str) -> Tuple[int, int, int]:
-    """Converts a HEX color string to an (R, G, B) tuple."""
     hex_str = hex_str.lstrip('#')
     return tuple(int(hex_str[i:i+2], 16) for i in (0, 2, 4))
 
 def rgb_to_lab(rgb_tuple: Tuple[int, int, int]) -> np.ndarray:
-    """Converts an RGB tuple (0-255) to a CIE-L*a*b* numpy array."""
     rgb_array = np.array([[rgb_tuple]], dtype=np.uint8)
     return color.rgb2lab(rgb_array)[0][0]
 
 def lab_to_rgb(lab_array: np.ndarray) -> Tuple[int, int, int]:
-    """Converts a CIE-L*a*b* numpy array back to an RGB tuple (0-255)."""
     rgb_scaled = color.lab2rgb(lab_array.reshape((1, 1, 3)))
     return tuple((rgb_scaled[0][0] * 255).astype(int))
 
 def rgb_to_hex(rgb_tuple: Tuple[int, int, int]) -> str:
     """Converts an (R, G, B) tuple to a HEX color string."""
-    return '#{:02x}{:02x}{:02x}'.format(*rgb_tuple)
+    # UPDATED: Use uppercase 'X' for uppercase hex codes
+    return '#{:02X}{:02X}{:02X}'.format(*rgb_tuple)
 
 def get_color_difference(lab1: np.ndarray, lab2: np.ndarray) -> float:
-    """Calculates the Delta E 2000 difference between two L*a*b* colors."""
     return color.deltaE_ciede2000(lab1.reshape((1, 1, 3)), lab2.reshape((1, 1, 3)))[0][0]
 
 def mix_lab_colors(colors_with_ratios: List[Tuple[np.ndarray, int]]) -> np.ndarray:
-    """Mixes L*a*b* colors using a weighted average based on ratios."""
     total_ratio = sum(ratio for _, ratio in colors_with_ratios)
     if total_ratio == 0:
         return np.zeros(3)
@@ -72,11 +65,6 @@ def mix_lab_colors(colors_with_ratios: List[Tuple[np.ndarray, int]]) -> np.ndarr
 # --- API Endpoint ---
 @app.post("/generate-recipe", response_model=List[RecipeOutput])
 async def generate_recipe_endpoint(request: RecipeRequest):
-    """
-    This endpoint receives a target color and a list of available paints,
-    then calculates and returns the single best mixing recipe for 
-    2, 3, and 4-ingredient combinations.
-    """
     try:
         target_rgb = hex_to_rgb(request.target_hex)
         target_lab = rgb_to_lab(target_rgb)
@@ -126,8 +114,5 @@ async def generate_recipe_endpoint(request: RecipeRequest):
             )
         )
 
-    # --- THIS IS THE NEW LINE ---
-    # Sort the final list by accuracy in descending order.
     output_recipes.sort(key=lambda x: x.accuracy, reverse=True)
-
     return output_recipes

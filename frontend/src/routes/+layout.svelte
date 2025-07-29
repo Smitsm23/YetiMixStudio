@@ -17,4 +17,17 @@
     }
 </script>
 
-<slot />
+<div class="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 font-sans">
+    
+    <!-- The site-wide Header with the Login button -->
+    <Header />
+
+    <!-- The main content of your pages will be rendered here -->
+    <main class="flex-grow">
+        <slot />
+    </main>
+
+    <!-- The site-wide Footer -->
+    <Footer />
+
+</div>
